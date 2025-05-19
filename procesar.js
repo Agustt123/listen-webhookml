@@ -46,8 +46,8 @@ let isConnecting = false;
 //const dbuser = "logisticaA";
 //const dbpass = "logisticaa";
 //const db = "logisticaa";
-const dbuser = "callback_uincomes";
-const dbpass = "[dH*XT[4XkFB";
+const dbuser = "callback_u2u3";
+const dbpass = "7L35HWuw,8,i";
 const db = "callback_incomesML";
 
 const con = mysql.createConnection({
