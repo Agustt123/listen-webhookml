@@ -286,4 +286,3 @@ async function enviarMensajeEstadoML(data, cola) {
 }
 
 // Iniciar el sistema
-initRabbitMQ();
