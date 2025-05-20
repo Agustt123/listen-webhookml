@@ -256,9 +256,9 @@ async function processWebhook(data2) {
         });
       }
     } else {
-      console.warn(
-        `⚠️ Usuario ${incomeuserid} no está en la lista de sellers permitidos`
-      );
+      //     console.warn(
+      //     `⚠️ Usuario ${incomeuserid} no está en la lista de sellers permitidos`
+      //  );
     }
   } catch (e) {
     console.error("❌ Error procesando webhook:", e.message);
