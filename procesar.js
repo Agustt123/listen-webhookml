@@ -188,10 +188,10 @@ async function processWebhook(data2) {
             console.warn("⚠️ Respuesta inesperada del endpoint de sellers");
           }
         } catch (error) {
-          console.error(
-            "❌ Error consultando endpoint externo:",
-            error.message
-          );
+          //    console.error(
+          //    "❌ Error consultando endpoint externo:",
+          //   error.message
+          //);
         }
       } else {
         exists = true;
@@ -253,7 +253,7 @@ async function processWebhook(data2) {
               }
             });
           } else {
-            console.log(`ℹ️ Registro ya existe en ${tablename}`);
+            //   console.log(`ℹ️ Registro ya existe en ${tablename}`);
           }
         });
       }
