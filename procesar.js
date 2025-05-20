@@ -120,6 +120,10 @@ function handleRabbitClose() {
   }
 }
 
+function handleRabbitError(err) {
+  console.error("❌ Error en RabbitMQ:", err.message);
+  rabbitConnectionActive = false;
+}
 async function ensureRabbitMQConnection() {
   if (!rabbitConnectionActive) {
     await initRabbitMQ();
