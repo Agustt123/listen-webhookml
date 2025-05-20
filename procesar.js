@@ -7,18 +7,17 @@ let pLimit;
 async function initializePLimit() {
   const module = await import("p-limit");
   pLimit = module.default;
-  // Ahora puedes usar 'pLimit' con seguridad
 }
 
 initializePLimit()
   .then(() => {
     // El resto de tu código que depende de 'pLimit' va aquí
-    const limit = pLimit(1); // Ejemplo de uso
-    // ... tu lógica de consumo de la cola ...
+    consumeQueue(); // Comenzar a consumir la cola después de inicializar pLimit
   })
   .catch((err) => {
     console.error("Error al importar p-limit:", err);
   });
+
 // Configuración de Redis
 const client = redis.createClient({
   socket: {
@@ -88,7 +87,6 @@ async function initRabbitMQ() {
     rabbitConnection.on("close", handleRabbitClose);
     rabbitChannel = await rabbitConnection.createChannel();
     await rabbitChannel.assertQueue(queue, { durable: true });
-    // console.log("✅ Conectado a RabbitMQ y canal creado.");
     rabbitConnectionActive = true;
   } catch (error) {
     console.error("❌ Error al conectar a RabbitMQ:", error.message);
@@ -101,13 +99,11 @@ async function initRabbitMQ() {
 function handleRabbitError(err) {
   console.error("❌ Error en RabbitMQ:", err.message);
   rabbitConnectionActive = false;
-  // Aquí podrías intentar una re-conexión más agresiva o loggear el error en detalle
 }
 
 function handleRabbitClose() {
   console.warn("⚠️ Conexión a RabbitMQ cerrada.");
   rabbitConnectionActive = false;
-  // No re-intentar inmediatamente aquí, la re-conexión se manejará bajo demanda
 }
 
 async function ensureRabbitMQConnection() {
@@ -123,18 +119,14 @@ async function enviarMensajeEstadoML(data, cola) {
       rabbitChannel.sendToQueue(cola, Buffer.from(JSON.stringify(data)), {
         persistent: true,
       });
-      // console.log(`📤 Enviado a cola ${cola}:`, data);
     } else {
       console.warn(
         "❗ Conexión a RabbitMQ no activa, no se pudo enviar a:",
         cola
       );
-      // Aquí podrías implementar una estrategia de re-intento para el envío
-      // o guardar el mensaje en una cola local para re-intento posterior
     }
   } catch (error) {
     console.error("❌ Error al enviar mensaje a RabbitMQ:", error.message);
-    // Manejar el error de envío
   }
 }
 
@@ -149,7 +141,7 @@ function isSellerAllowed(sellerId) {
 let cachedSellers = [];
 
 async function processWebhook(data2) {
-  const limit = pLimit(5);
+  const limit = pLimit(5); // Mantener el límite de concurrencia
   try {
     const incomeuserid = data2.user_id ? data2.user_id.toString() : "";
     const resource = data2.resource;
@@ -189,9 +181,7 @@ async function processWebhook(data2) {
     }
 
     if (exists) {
-      //  console.log("mepa quie si ");
       let tablename = "";
-      //  console.log("llegamoss222");
       switch (topic) {
         case "orders_v2":
           tablename = "db_orders";
@@ -200,9 +190,7 @@ async function processWebhook(data2) {
             sellerid: incomeuserid,
             fecha: now.toISOString().slice(0, 19).replace("T", " "),
           };
-          //   console.log("llegamoss333");
           await enviarMensajeEstadoML(mensajeRA2, "enviosml_ia");
-          //    console.log("📤 Enviado a cola enviosml_ia:", mensajeRA2);
           break;
 
         case "shipments":
@@ -216,10 +204,6 @@ async function processWebhook(data2) {
             mensajeRA,
             "shipments_states_callback_ml"
           );
-          //   console.log(
-          //   "📤 Enviado a cola shipments_states_callback_ml:",
-          // mensajeRA
-          //);
           break;
 
         case "flex-handshakes":
@@ -256,9 +240,9 @@ async function processWebhook(data2) {
         });
       }
     } else {
-      //     console.warn(
-      //     `⚠️ Usuario ${incomeuserid} no está en la lista de sellers permitidos`
-      //  );
+      console.warn(
+        `⚠️ Usuario ${incomeuserid} no está en la lista de sellers permitidos`
+      );
     }
   } catch (e) {
     console.error("❌ Error procesando webhook:", e.message);
@@ -266,7 +250,7 @@ async function processWebhook(data2) {
 }
 
 async function consumeQueue() {
-  const limit = pLimit(1);
+  const limit = pLimit(100); // Aumentar el límite a 100
   try {
     await ensureRabbitMQConnection();
     if (rabbitChannel && rabbitConnectionActive) {
@@ -274,13 +258,12 @@ async function consumeQueue() {
         if (!msg) return;
         await limit(async () => {
           try {
-            rabbitChannel.ack(msg);
             const data = JSON.parse(msg.content.toString());
             await processWebhook(data);
+            rabbitChannel.ack(msg);
             if (rabbitChannel && rabbitConnectionActive) {
             } else {
               console.warn("⚠️ Conexión a RabbitMQ inactiva, no se pudo ack.");
-              // Aquí podrías implementar una estrategia para re-procesar el mensaje
             }
           } catch (e) {
             console.error("❌ Error procesando mensaje:", e.message);
@@ -289,7 +272,6 @@ async function consumeQueue() {
               rabbitChannel.nack(msg, false, false);
             } else {
               console.warn("⚠️ Conexión a RabbitMQ inactiva, no se pudo nack.");
-              // Aquí podrías implementar una estrategia para manejar el error
             }
           }
         });
