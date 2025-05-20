@@ -274,6 +274,10 @@ async function consumeQueue() {
               rabbitChannel.nack(msg, false, false);
             } else {
               console.warn("⚠️ Conexión a RabbitMQ inactiva, no se pudo nack.");
+              console.warn(
+                "⚠️ Conexión a RabbitMQ inactiva, reiniciando el script..."
+              );
+              restartScript();
             }
           }
         });
@@ -288,6 +292,11 @@ async function consumeQueue() {
     console.error("❌ Error al consumir la cola:", error.message);
     setTimeout(consumeQueue, 5000);
   }
+}
+
+function restartScript() {
+  console.warn("🔄 Reiniciando el script...");
+  process.exit(1); // Salir con un código de error para que el gestor de procesos lo reinicie
 }
 
 // Iniciar el sistema
