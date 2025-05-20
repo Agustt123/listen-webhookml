@@ -231,11 +231,11 @@ async function processWebhook(data2) {
                   err.message
                 );
               } else {
-                console.log(`✅ Registro insertado en ${tablename}`);
+                //         console.log(`✅ Registro insertado en ${tablename}`);
               }
             });
           } else {
-            console.log(`ℹ️ Registro ya existe en ${tablename}`);
+            //       console.log(`ℹ️ Registro ya existe en ${tablename}`);
           }
         });
       }
