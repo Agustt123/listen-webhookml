@@ -159,7 +159,7 @@ function isSellerAllowed(sellerId) {
 let cachedSellers = [];
 
 async function processWebhook(data2) {
-  const limit = pLimit(5); // Mantener el límite de concurrencia
+  const limit = pLimit(100); // Mantener el límite de concurrencia
   try {
     const incomeuserid = data2.user_id ? data2.user_id.toString() : "";
     const resource = data2.resource;
