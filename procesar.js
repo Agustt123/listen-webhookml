@@ -3,7 +3,8 @@ const mysql = require("mysql2");
 const redis = require("redis");
 const axios = require("axios");
 let pLimit;
-
+let retryCount = 0; // Contador de intentos de reconexión
+const maxRetries = 5; // Máximo número de intentos de reconexión
 async function initializePLimit() {
   const module = await import("p-limit");
   pLimit = module.default;
@@ -88,23 +89,35 @@ async function initRabbitMQ() {
     rabbitChannel = await rabbitConnection.createChannel();
     await rabbitChannel.assertQueue(queue, { durable: true });
     rabbitConnectionActive = true;
+    retryCount = 0; // Reiniciar el contador si la conexión es exitosa
   } catch (error) {
     console.error("❌ Error al conectar a RabbitMQ:", error.message);
-    setTimeout(initRabbitMQ, 5000);
+    retryCount++;
+    if (retryCount >= maxRetries) {
+      console.error(
+        `❌ Se alcanzó el límite de reconexiones (${maxRetries}). Reiniciando el script...`
+      );
+      restartScript();
+    } else {
+      setTimeout(initRabbitMQ, 5000); // Intentar reconectar después de 5 segundos
+    }
   } finally {
     isConnecting = false;
   }
 }
 
-function handleRabbitError(err) {
-  console.error("❌ Error en RabbitMQ:", err.message);
-  rabbitConnectionActive = false;
-}
-
 function handleRabbitClose() {
   console.warn("⚠️ Conexión a RabbitMQ cerrada. Intentando reconectar...");
   rabbitConnectionActive = false;
-  setTimeout(initRabbitMQ, 5000); // Intentar reconectar cada 5 segundos
+  retryCount++; // Incrementar el contador en caso de cierre
+  if (retryCount >= maxRetries) {
+    console.error(
+      `❌ Se alcanzó el límite de reconexiones (${maxRetries}). Reiniciando el script...`
+    );
+    restartScript();
+  } else {
+    setTimeout(initRabbitMQ, 5000); // Intentar reconectar después de 5 segundos
+  }
 }
 
 async function ensureRabbitMQConnection() {
