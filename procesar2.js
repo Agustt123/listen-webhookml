@@ -157,36 +157,7 @@ async function processWebhook(data2) {
     let now = new Date();
     now.setHours(now.getHours() - 3); // Ajuste horario
 
-    let exists = false;
-
-    if (topic === "flex-handshakes") {
-      exists = true;
-    } else {
-      if (cachedSellers.length === 0 || !cachedSellers.includes(incomeuserid)) {
-        try {
-          const response = await axios.get(
-            "https://callbackml.lightdata.app/MLProcesar/get/"
-          );
-          if (
-            response.data &&
-            response.data.success &&
-            Array.isArray(response.data.sellers)
-          ) {
-            cachedSellers = response.data.sellers;
-            exists = cachedSellers.includes(incomeuserid);
-          } else {
-            console.warn("⚠️ Respuesta inesperada del endpoint de sellers");
-          }
-        } catch (error) {
-          console.error(
-            "❌ Error consultando endpoint externo:",
-            error.message
-          );
-        }
-      } else {
-        exists = true;
-      }
-    }
+    let exists = true;
 
     if (exists) {
       //  console.log("mepa quie si ");
@@ -247,18 +218,18 @@ async function processWebhook(data2) {
                   err.message
                 );
               } else {
-                console.log(`✅ Registro insertado en ${tablename}`);
+                //   console.log(`✅ Registro insertado en ${tablename}`);
               }
             });
           } else {
-            console.log(`ℹ️ Registro ya existe en ${tablename}`);
+            //  console.log(`ℹ️ Registro ya existe en ${tablename}`);
           }
         });
       }
     } else {
-      console.warn(
-        `⚠️ Usuario ${incomeuserid} no está en la lista de sellers permitidos`
-      );
+      // console.warn(
+      //   `⚠️ Usuario ${incomeuserid} no está en la lista de sellers permitidos`
+      //   );
     }
   } catch (e) {
     console.error("❌ Error procesando webhook:", e.message);
@@ -274,10 +245,10 @@ async function consumeQueue() {
         if (!msg) return;
         await limit(async () => {
           try {
-            rabbitChannel.ack(msg);
             const data = JSON.parse(msg.content.toString());
             await processWebhook(data);
             if (rabbitChannel && rabbitConnectionActive) {
+              rabbitChannel.ack(msg);
             } else {
               console.warn("⚠️ Conexión a RabbitMQ inactiva, no se pudo ack.");
               // Aquí podrías implementar una estrategia para re-procesar el mensaje
