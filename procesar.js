@@ -102,8 +102,9 @@ function handleRabbitError(err) {
 }
 
 function handleRabbitClose() {
-  console.warn("⚠️ Conexión a RabbitMQ cerrada.");
+  console.warn("⚠️ Conexión a RabbitMQ cerrada. Intentando reconectar...");
   rabbitConnectionActive = false;
+  setTimeout(initRabbitMQ, 5000); // Intentar reconectar cada 5 segundos
 }
 
 async function ensureRabbitMQConnection() {
@@ -231,11 +232,11 @@ async function processWebhook(data2) {
                   err.message
                 );
               } else {
-                //         console.log(`✅ Registro insertado en ${tablename}`);
+                console.log(`✅ Registro insertado en ${tablename}`);
               }
             });
           } else {
-            //       console.log(`ℹ️ Registro ya existe en ${tablename}`);
+            console.log(`ℹ️ Registro ya existe en ${tablename}`);
           }
         });
       }
@@ -250,7 +251,7 @@ async function processWebhook(data2) {
 }
 
 async function consumeQueue() {
-  const limit = pLimit(100); // Aumentar el límite a 100
+  const limit = pLimit(500); // Aumentar el límite a 100
   try {
     await ensureRabbitMQConnection();
     if (rabbitChannel && rabbitConnectionActive) {
@@ -260,8 +261,9 @@ async function consumeQueue() {
           try {
             const data = JSON.parse(msg.content.toString());
             await processWebhook(data);
-            rabbitChannel.ack(msg);
             if (rabbitChannel && rabbitConnectionActive) {
+              // Solo ack si el canal está activo
+              rabbitChannel.ack(msg);
             } else {
               console.warn("⚠️ Conexión a RabbitMQ inactiva, no se pudo ack.");
             }
