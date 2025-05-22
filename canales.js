@@ -19,7 +19,7 @@ const axiosInstance = axios.create({
   httpsAgent: new https.Agent({ keepAlive: true }),
 });
 
-async function retryRequest(fn, retries = 5, delayMs = 1000) {
+async function retryRequest(fn, retries = 2, delayMs = 1000) {
   for (let i = 0; i < retries; i++) {
     try {
       return await fn();
@@ -78,4 +78,4 @@ async function main() {
 main();
 
 // Ejecutar cada 10 minutos (600,000 ms)
-setInterval(main, 10 * 60 * 1000);
+setInterval(main, 5 * 60 * 1000);
