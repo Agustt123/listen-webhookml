@@ -12,8 +12,7 @@ async function initializePLimit() {
 
 initializePLimit()
   .then(() => {
-    // El resto de tu código que depende de 'pLimit' va aquí
-    consumeQueue(); // Comenzar a consumir la cola después de inicializar pLimit
+    initRabbitMQ().then(consumeQueue);
   })
   .catch((err) => {
     console.error("Error al importar p-limit:", err);
@@ -80,8 +79,18 @@ con.connect((err) => {
 });
 
 async function initRabbitMQ() {
-  if (isConnecting || rabbitConnectionActive) return;
+  if (isConnecting) return;
   isConnecting = true;
+
+  if (rabbitConnection) {
+    try {
+      await rabbitConnection.close();
+      console.log("🔌 Conexión anterior a RabbitMQ cerrada.");
+    } catch (e) {
+      console.warn("⚠️ Error cerrando la conexión anterior:", e.message);
+    }
+  }
+
   try {
     rabbitConnection = await amqp.connect(rabbitMQUrl);
     rabbitConnection.on("error", handleRabbitError);
@@ -89,17 +98,19 @@ async function initRabbitMQ() {
     rabbitChannel = await rabbitConnection.createChannel();
     await rabbitChannel.assertQueue(queue, { durable: true });
     rabbitConnectionActive = true;
-    retryCount = 0; // Reiniciar el contador si la conexión es exitosa
+    retryCount = 0;
+    console.log("✅ Nueva conexión y canal a RabbitMQ establecidos.");
+
+    // Reiniciar el consumo cada vez que reconectás
+    consumeQueue();
   } catch (error) {
     console.error("❌ Error al conectar a RabbitMQ:", error.message);
     retryCount++;
     if (retryCount >= maxRetries) {
-      console.error(
-        `❌ Se alcanzó el límite de reconexiones (${maxRetries}). Reiniciando el script...`
-      );
+      console.error(`❌ Máximo de intentos (${maxRetries}) alcanzado.`);
       restartScript();
     } else {
-      setTimeout(initRabbitMQ, 5000); // Intentar reconectar después de 5 segundos
+      setTimeout(initRabbitMQ, 5000);
     }
   } finally {
     isConnecting = false;
@@ -268,45 +279,38 @@ async function processWebhook(data2) {
 }
 
 async function consumeQueue() {
-  const limit = pLimit(500); // Aumentar el límite a 100
+  if (!rabbitChannel || !rabbitConnectionActive) {
+    console.warn("❗ No hay canal o conexión activa para consumir.");
+    return;
+  }
+
   try {
-    await ensureRabbitMQConnection();
-    if (rabbitChannel && rabbitConnectionActive) {
-      rabbitChannel.consume(queue, async (msg) => {
-        if (!msg) return;
-        await limit(async () => {
-          try {
-            const data = JSON.parse(msg.content.toString());
-            await processWebhook(data);
-            if (rabbitChannel && rabbitConnectionActive) {
-              // Solo ack si el canal está activo
-              rabbitChannel.ack(msg);
-            } else {
-              console.warn("⚠️ Conexión a RabbitMQ inactiva, no se pudo ack.");
-            }
-          } catch (e) {
-            console.error("❌ Error procesando mensaje:", e.message);
-            await ensureRabbitMQConnection();
-            if (rabbitChannel && rabbitConnectionActive) {
-              rabbitChannel.nack(msg, false, false);
-            } else {
-              console.warn("⚠️ Conexión a RabbitMQ inactiva, no se pudo nack.");
-              console.warn(
-                "⚠️ Conexión a RabbitMQ inactiva, reiniciando el script..."
-              );
-              restartScript();
-            }
+    const limit = pLimit(500);
+    await rabbitChannel.consume(queue, async (msg) => {
+      if (!msg) return;
+      await limit(async () => {
+        try {
+          const data = JSON.parse(msg.content.toString());
+          await processWebhook(data);
+          if (rabbitChannel && rabbitConnectionActive) {
+            rabbitChannel.ack(msg);
+          } else {
+            console.warn("⚠️ No se pudo ack: canal no activo.");
           }
-        });
+        } catch (e) {
+          console.error("❌ Error procesando mensaje:", e.message);
+          if (rabbitChannel && rabbitConnectionActive) {
+            rabbitChannel.nack(msg, false, false);
+          } else {
+            console.warn("⚠️ No se pudo nack, reiniciando...");
+            restartScript();
+          }
+        }
       });
-      console.log(
-        "✅ Conectado a RabbitMQ y canal creado. Esperando mensajes..."
-      );
-    } else {
-      console.warn("❗ No se pudo iniciar el consumo de la cola.");
-    }
+    });
+    console.log("✅ Consumo de cola iniciado.");
   } catch (error) {
-    console.error("❌ Error al consumir la cola:", error.message);
+    console.error("❌ Error en consumeQueue:", error.message);
     setTimeout(consumeQueue, 5000);
   }
 }
@@ -317,4 +321,4 @@ function restartScript() {
 }
 
 // Iniciar el sistema
-initRabbitMQ().then(consumeQueue);
+//initRabbitMQ().then(consumeQueue);
