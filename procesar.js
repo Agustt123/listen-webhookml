@@ -219,7 +219,7 @@ async function processWebhook(data2) {
             sellerid: incomeuserid,
             fecha: now.toISOString().slice(0, 19).replace("T", " "),
           };
-          await enviarMensajeEstadoML(mensajeRA2, "enviosml_ia");
+          //     await enviarMensajeEstadoML(mensajeRA2, "enviosml_ia");
           break;
 
         case "shipments":
@@ -291,7 +291,10 @@ async function consumeQueue() {
       await limit(async () => {
         try {
           const data = JSON.parse(msg.content.toString());
+          //    console.log(data);
+
           await processWebhook(data);
+
           if (rabbitChannel && rabbitConnectionActive) {
             rabbitChannel.ack(msg);
           } else {
