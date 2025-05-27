@@ -214,17 +214,17 @@ async function processWebhook(data2) {
       switch (topic) {
         case "orders_v2":
           tablename = "db_orders";
-          const mensajeRA2 = {
-            resource,
-            sellerid: incomeuserid,
-            fecha: now.toISOString().slice(0, 19).replace("T", " "),
-          };
 
           break;
 
         case "shipments":
           tablename = "db_shipments";
           const mensajeRA = {
+            resource,
+            sellerid: incomeuserid,
+            fecha: now.toISOString().slice(0, 19).replace("T", " "),
+          };
+          const mensajeRA2 = {
             resource,
             sellerid: incomeuserid,
             fecha: now.toISOString().slice(0, 19).replace("T", " "),
