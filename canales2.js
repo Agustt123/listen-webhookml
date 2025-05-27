@@ -48,7 +48,7 @@ async function main() {
     const connections = await getConnections();
 
     const filteredConnections = connections.filter(
-      (conn) => conn.user === "lightdata" && conn.channels === 0
+      (conn) => conn.user === "lightdata" && conn.channels > 5
     );
 
     console.log(
