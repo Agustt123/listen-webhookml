@@ -219,7 +219,7 @@ async function processWebhook(data2) {
             sellerid: incomeuserid,
             fecha: now.toISOString().slice(0, 19).replace("T", " "),
           };
-          await enviarMensajeEstadoML(mensajeRA2, "enviosml_ia");
+
           break;
 
         case "shipments":
@@ -233,6 +233,7 @@ async function processWebhook(data2) {
             mensajeRA,
             "shipments_states_callback_ml"
           );
+          await enviarMensajeEstadoML(mensajeRA2, "enviosml_ia");
           break;
 
         case "flex-handshakes":
