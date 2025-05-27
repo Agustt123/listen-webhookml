@@ -78,4 +78,4 @@ async function main() {
 main();
 
 // Ejecutar cada 10 minutos (600,000 ms)
-setInterval(main, 5 * 60 * 1000);
+setInterval(main, 2 * 60 * 1000);
