@@ -2,6 +2,7 @@ const amqp = require("amqplib");
 const mysql = require("mysql2");
 const redis = require("redis");
 const axios = require("axios");
+const { enviarAlertaPorCorreo } = require("./mail");
 let pLimit;
 let retryCount = 0;
 const maxRetries = 5;
@@ -228,6 +229,8 @@ async function processWebhook(data2) {
         )} AND resource= ${mysql.escape(resource)} LIMIT 1`;
         con.query(sql, (err, result) => {
           if (err) {
+            enviarAlertaPorCorreo("Error en MySQL", err.message);
+
             console.error("❌ Error en SELECT:", err.message);
             return;
           }

@@ -11,6 +11,7 @@
     "mysql": "^2.18.1",
     "mysql2": "^3.14.1",
     "node-mysql": "^0.4.2",
+    "nodemailer": "^7.0.3",
     "p-limit": "^6.2.0",
     "process-nextick-args": "^2.0.1",
     "readable-stream": "^2.3.7",
