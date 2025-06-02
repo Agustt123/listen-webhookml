@@ -107,7 +107,8 @@ async function initRabbitMQ() {
     console.log("✅ Nueva conexión y canal a RabbitMQ establecidos.");
 
     if (!hasStartedConsuming) {
-      hasStartedConsuming = true;
+      console.log("entrre");
+
       consumeQueue();
     }
   } catch (error) {
