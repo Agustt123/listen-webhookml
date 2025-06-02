@@ -230,6 +230,7 @@ async function processWebhook(data2) {
         con.query(sql, (err, result) => {
           if (err) {
             console.log(`❌ Error en SELECT de ${tablename}:`, err.message);
+            console.log(`SQL: ${sql}`);
 
             enviarAlertaPorCorreo("Error en MySQL", err.message);
 
