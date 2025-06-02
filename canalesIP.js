@@ -42,17 +42,19 @@ async function closeConnection(name) {
     axiosInstance.delete(`/connections/${encodeURIComponent(name)}`)
   );
 }
-
 async function main() {
   try {
     const connections = await getConnections();
 
     const filteredConnections = connections.filter(
-      (conn) => conn.user === "lightdata" && conn.channels > -1
+      (conn) =>
+        conn.user === "lightdata" &&
+        conn.channels > -1 &&
+        conn.peer_host.startsWith("144.217.98.73")
     );
 
     console.log(
-      `🔍 Conexiones a cerrar (usuario 'lightdata' con más de 5 canales): ${filteredConnections.length}`
+      `🔍 Conexiones a cerrar (usuario 'lightdata' desde IP 144.217.98.73): ${filteredConnections.length}`
     );
 
     for (const conn of filteredConnections) {

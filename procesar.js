@@ -3,8 +3,10 @@ const mysql = require("mysql2");
 const redis = require("redis");
 const axios = require("axios");
 let pLimit;
-let retryCount = 0; // Contador de intentos de reconexión
-const maxRetries = 5; // Máximo número de intentos de reconexión
+let retryCount = 0;
+const maxRetries = 5;
+
+// Inicializar p-limit
 async function initializePLimit() {
   const module = await import("p-limit");
   pLimit = module.default;
@@ -12,13 +14,13 @@ async function initializePLimit() {
 
 initializePLimit()
   .then(() => {
-    initRabbitMQ().then(consumeQueue);
+    initRabbitMQ();
   })
   .catch((err) => {
     console.error("Error al importar p-limit:", err);
   });
 
-// Configuración de Redis
+// Redis local
 const client = redis.createClient({
   socket: {
     path: "/home/callback/ea-podman.d/ea-redis62.callback.01/redis.sock",
@@ -34,6 +36,7 @@ client
     console.error("❌ Error al conectar a Redis local:", err.message);
   });
 
+// Redis remoto
 const clientFF = redis.createClient({
   socket: {
     host: "192.99.190.137",
@@ -56,28 +59,22 @@ const queue = "webhookml";
 let rabbitConnection;
 let rabbitChannel;
 let isConnecting = false;
-let rabbitConnectionActive = false; // Nueva bandera
+let rabbitConnectionActive = false;
+let hasStartedConsuming = false;
 
-// Configuración de MySQL
-const dbuser = "callback_u2u3";
-const dbpass = "7L35HWuw,8,i";
-const db = "callback_incomesML";
-
+// MySQL
 const con = mysql.createConnection({
   host: "bhsws10.ticdns.com",
-  user: dbuser,
-  password: dbpass,
-  database: db,
+  user: "callback_u2u3",
+  password: "7L35HWuw,8,i",
+  database: "callback_incomesML",
 });
-
 con.connect((err) => {
-  if (err) {
-    console.error("❌ Error al conectar a MySQL:", err.message);
-  } else {
-    console.log("✅ Conectado a MySQL!");
-  }
+  if (err) console.error("❌ Error al conectar a MySQL:", err.message);
+  else console.log("✅ Conectado a MySQL!");
 });
 
+// Iniciar RabbitMQ
 async function initRabbitMQ() {
   if (isConnecting) return;
   isConnecting = true;
@@ -101,8 +98,10 @@ async function initRabbitMQ() {
     retryCount = 0;
     console.log("✅ Nueva conexión y canal a RabbitMQ establecidos.");
 
-    // Reiniciar el consumo cada vez que reconectás
-    consumeQueue();
+    if (!hasStartedConsuming) {
+      hasStartedConsuming = true;
+      consumeQueue();
+    }
   } catch (error) {
     console.error("❌ Error al conectar a RabbitMQ:", error.message);
     retryCount++;
@@ -120,14 +119,12 @@ async function initRabbitMQ() {
 function handleRabbitClose() {
   console.warn("⚠️ Conexión a RabbitMQ cerrada. Intentando reconectar...");
   rabbitConnectionActive = false;
-  retryCount++; // Incrementar el contador en caso de cierre
+  retryCount++;
   if (retryCount >= maxRetries) {
-    console.error(
-      `❌ Se alcanzó el límite de reconexiones (${maxRetries}). Reiniciando el script...`
-    );
+    console.error(`❌ Se alcanzó el límite de reconexiones (${maxRetries}).`);
     restartScript();
   } else {
-    setTimeout(initRabbitMQ, 5000); // Intentar reconectar después de 5 segundos
+    setTimeout(initRabbitMQ, 5000);
   }
 }
 
@@ -135,6 +132,7 @@ function handleRabbitError(err) {
   console.error("❌ Error en RabbitMQ:", err.message);
   rabbitConnectionActive = false;
 }
+
 async function ensureRabbitMQConnection() {
   if (!rabbitConnectionActive) {
     await initRabbitMQ();
@@ -159,24 +157,16 @@ async function enviarMensajeEstadoML(data, cola) {
   }
 }
 
-// Función para verificar si el seller está permitido
-function isSellerAllowed(sellerId) {
-  const allowedSellers = [
-    /* lista de sellers permitidos */
-  ];
-  return allowedSellers.includes(sellerId);
-}
-
 let cachedSellers = [];
 
 async function processWebhook(data2) {
-  const limit = pLimit(100); // Mantener el límite de concurrencia
+  const limit = pLimit(100);
   try {
     const incomeuserid = data2.user_id ? data2.user_id.toString() : "";
     const resource = data2.resource;
     const topic = data2.topic;
     let now = new Date();
-    now.setHours(now.getHours() - 3); // Ajuste horario
+    now.setHours(now.getHours() - 3);
 
     let exists = false;
 
@@ -199,10 +189,7 @@ async function processWebhook(data2) {
             console.warn("⚠️ Respuesta inesperada del endpoint de sellers");
           }
         } catch (error) {
-          //    console.error(
-          //    "❌ Error consultando endpoint externo:",
-          //   error.message
-          //);
+          // silent fail
         }
       } else {
         exists = true;
@@ -214,7 +201,6 @@ async function processWebhook(data2) {
       switch (topic) {
         case "orders_v2":
           tablename = "db_orders";
-
           break;
 
         case "shipments":
@@ -224,16 +210,11 @@ async function processWebhook(data2) {
             sellerid: incomeuserid,
             fecha: now.toISOString().slice(0, 19).replace("T", " "),
           };
-          const mensajeRA2 = {
-            resource,
-            sellerid: incomeuserid,
-            fecha: now.toISOString().slice(0, 19).replace("T", " "),
-          };
           await enviarMensajeEstadoML(
             mensajeRA,
             "shipments_states_callback_ml"
           );
-          await enviarMensajeEstadoML(mensajeRA2, "enviosml_ia");
+          await enviarMensajeEstadoML(mensajeRA, "enviosml_ia");
           break;
 
         case "flex-handshakes":
@@ -264,15 +245,9 @@ async function processWebhook(data2) {
                 console.log(`✅ Registro insertado en ${tablename}`);
               }
             });
-          } else {
-            //   console.log(`ℹ️ Registro ya existe en ${tablename}`);
           }
         });
       }
-    } else {
-      //   console.warn(
-      //   `⚠️ Usuario ${incomeuserid} no está en la lista de sellers permitidos`
-      //);
     }
   } catch (e) {
     console.error("❌ Error procesando webhook:", e.message);
@@ -292,8 +267,6 @@ async function consumeQueue() {
       await limit(async () => {
         try {
           const data = JSON.parse(msg.content.toString());
-          //    console.log(data);
-
           await processWebhook(data);
 
           if (rabbitChannel && rabbitConnectionActive) {
@@ -321,8 +294,5 @@ async function consumeQueue() {
 
 function restartScript() {
   console.warn("🔄 Reiniciando el script...");
-  process.exit(1); // Salir con un código de error para que el gestor de procesos lo reinicie
+  process.exit(1);
 }
-
-// Iniciar el sistema
-//initRabbitMQ().then(consumeQueue);
