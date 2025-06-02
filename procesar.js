@@ -63,16 +63,23 @@ let isConnecting = false;
 let rabbitConnectionActive = false;
 let hasStartedConsuming = false;
 
-// MySQL
-const con = mysql.createConnection({
+const con = mysql.createPool({
   host: "bhsws10.ticdns.com",
   user: "callback_u2u3",
   password: "7L35HWuw,8,i",
   database: "callback_incomesML",
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
 });
-con.connect((err) => {
-  if (err) console.error("❌ Error al conectar a MySQL:", err.message);
-  else console.log("✅ Conectado a MySQL!");
+
+con.getConnection((err, connection) => {
+  if (err) {
+    console.error("❌ Error al conectar al pool de MySQL:", err.message);
+  } else {
+    console.log("✅ Pool de MySQL conectado.");
+    connection.release();
+  }
 });
 
 // Iniciar RabbitMQ
@@ -227,31 +234,44 @@ async function processWebhook(data2) {
         const sql = `SELECT id FROM ${tablename} WHERE seller_id = ${mysql.escape(
           incomeuserid
         )} AND resource= ${mysql.escape(resource)} LIMIT 1`;
-        con.query(sql, (err, result) => {
+
+        con.getConnection((err, connection) => {
           if (err) {
-            console.log(`❌ Error en SELECT de ${tablename}:`, err.message);
-            console.log(`SQL: ${sql}`);
-
-            enviarAlertaPorCorreo("Error en MySQL", err.message);
-
-            console.error("❌ Error en SELECT:", err.message);
+            console.error(
+              "❌ Error obteniendo conexión del pool:",
+              err.message
+            );
             return;
           }
-          if (result.length === 0) {
-            const insertSql = `INSERT INTO ${tablename} (seller_id, resource) VALUES (${mysql.escape(
-              incomeuserid
-            )}, ${mysql.escape(resource)})`;
-            con.query(insertSql, (err) => {
-              if (err) {
-                console.error(
-                  `❌ Error insertando en ${tablename}:`,
-                  err.message
-                );
-              } else {
-                console.log(`✅ Registro insertado en ${tablename}`);
-              }
-            });
-          }
+
+          connection.query(sql, (err, result) => {
+            if (err) {
+              console.error(`❌ Error en SELECT de ${tablename}:`, err.message);
+              enviarAlertaPorCorreo("Error en MySQL", err.message);
+              connection.release();
+              return;
+            }
+
+            if (result.length === 0) {
+              const insertSql = `INSERT INTO ${tablename} (seller_id, resource) VALUES (${mysql.escape(
+                incomeuserid
+              )}, ${mysql.escape(resource)})`;
+
+              connection.query(insertSql, (err) => {
+                if (err) {
+                  console.error(
+                    `❌ Error insertando en ${tablename}:`,
+                    err.message
+                  );
+                } else {
+                  console.log(`✅ Registro insertado en ${tablename}`);
+                }
+                connection.release();
+              });
+            } else {
+              connection.release();
+            }
+          });
         });
       }
     }
