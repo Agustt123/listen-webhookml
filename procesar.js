@@ -229,6 +229,8 @@ async function processWebhook(data2) {
         )} AND resource= ${mysql.escape(resource)} LIMIT 1`;
         con.query(sql, (err, result) => {
           if (err) {
+            console.log(`❌ Error en SELECT de ${tablename}:`, err.message);
+
             enviarAlertaPorCorreo("Error en MySQL", err.message);
 
             console.error("❌ Error en SELECT:", err.message);
