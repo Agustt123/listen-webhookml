@@ -223,7 +223,9 @@ async function processWebhook(data2) {
             mensajeRA,
             "shipments_states_callback_ml"
           );
+
           await enviarMensajeEstadoML(mensajeRA, "enviosml_ia");
+          console.log(`✅ Enviado mensaje a shipments_states_callback_ml: ${JSON.stringify(mensajeRA)}`);
           break;
 
         case "flex-handshakes":
