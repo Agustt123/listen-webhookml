@@ -210,7 +210,12 @@ async function processWebhook(data2) {
       switch (topic) {
         case "orders_v2":
           tablename = "db_orders";
-
+          const mensaje = {
+            resource,
+            sellerid: incomeuserid,
+            fecha: now.toISOString().slice(0, 19).replace("T", " "),
+          };
+          await enviarMensajeEstadoML(mensaje, "ordenesFF");
           break;
 
         case "shipments":
