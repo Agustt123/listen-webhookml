@@ -209,6 +209,8 @@ async function processWebhook(data2) {
       let tablename = "";
       switch (topic) {
         case "orders_v2":
+          console.log("ordenessssssssss");
+
           tablename = "db_orders";
           const mensaje = {
             resource,
@@ -232,7 +234,7 @@ async function processWebhook(data2) {
 
           await enviarMensajeEstadoML(mensajeRA, "enviosml_ia");
 
-          console.log(`✅ Enviado mensaje a shipments_states_callback_ml: ${JSON.stringify(mensajeRA)}`);
+          //    console.log(`✅ Enviado mensaje a shipments_states_callback_ml: ${JSON.stringify(mensajeRA)}`);
           break;
 
         case "flex-handshakes":
