@@ -210,7 +210,7 @@ async function processWebhook(data2) {
       switch (topic) {
         case "orders_v2":
           tablename = "db_orders";
-          await enviarMensajeEstadoML(mensajeRA, "ordenFF");
+          await enviarMensajeEstadoML(mensajeRA, "ordenesFF");
           break;
 
         case "shipments":
