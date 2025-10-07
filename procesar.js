@@ -176,6 +176,9 @@ async function processWebhook(data2) {
     const topic = data2.topic;
     let now = new Date();
     now.setHours(now.getHours() - 3);
+    if (incomeuserid == "135378723") {
+      console.log("entramossssssssssssssssssssssssssssssssssssssssssssssssssssssssss", data2);
+    }
 
     let exists = false;
 
@@ -186,7 +189,13 @@ async function processWebhook(data2) {
         try {
           const response = await axios.get(
             "https://callbackml.lightdata.app/MLProcesar/get/"
+
           );
+
+          if (incomeuserid == "135378723") {
+            console.log("avanzeeee", response.data);
+          }
+
           if (
             response.data &&
             response.data.success &&
@@ -209,7 +218,7 @@ async function processWebhook(data2) {
       let tablename = "";
       switch (topic) {
         case "orders_v2":
-          console.log("ordenessssssssss");
+
 
           tablename = "db_orders";
           const mensaje = {
