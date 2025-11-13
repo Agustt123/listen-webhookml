@@ -188,7 +188,7 @@ async function processWebhook(data2) {
       if (cachedSellers.length === 0 || !cachedSellers.includes(incomeuserid)) {
         try {
           const response = await axios.get(
-            "http://whml.lightdata.app/sellersactivos/showAll"
+            "https://whml.lightdata.app/sellersactivos/showAll"
 
           );
 
