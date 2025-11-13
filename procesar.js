@@ -188,7 +188,7 @@ async function processWebhook(data2) {
       if (cachedSellers.length === 0 || !cachedSellers.includes(incomeuserid)) {
         try {
           const response = await axios.get(
-            "https://callbackml.lightdata.app/MLProcesar/get/"
+            "http://whml.lightdata.app/sellersactivos/showAll"
 
           );
 
