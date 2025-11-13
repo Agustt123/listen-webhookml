@@ -201,9 +201,9 @@ async function processWebhook(data2) {
           if (
             response.data &&
             response.data.success &&
-            Array.isArray(response.data.sellers)
+            Array.isArray(response.data)
           ) {
-            cachedSellers = response.data.sellers;
+            cachedSellers = response.data;
             exists = cachedSellers.includes(incomeuserid);
           } else {
             console.warn("⚠️ Respuesta inesperada del endpoint de sellers");
