@@ -188,7 +188,7 @@ async function processWebhook(data2) {
       if (cachedSellers.length === 0 || !cachedSellers.includes(incomeuserid)) {
         try {
           const response = await axios.get(
-            "https://callbackml.lightdata.app/MLProcesar/get/"
+            "https://whml.lightdata.app/sellersactivos/showAll/"
 
 
 
@@ -198,16 +198,24 @@ async function processWebhook(data2) {
             console.log("avanzeeee", response.data);
           }
 
-          if (
+          if (Array.isArray(response.data)) {
+            // La nueva URL devuelve directamente el array
+            cachedSellers = response.data;
+            exists = cachedSellers.includes(incomeuserid);
+
+          } else if (
             response.data &&
             response.data.success &&
             Array.isArray(response.data.sellers)
           ) {
+            // Compatibilidad por si la URL vieja sigue activa
             cachedSellers = response.data.sellers;
             exists = cachedSellers.includes(incomeuserid);
+
           } else {
             console.warn("⚠️ Respuesta inesperada del endpoint de sellers");
           }
+
         } catch (error) {
           // silent fail
         }
