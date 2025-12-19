@@ -97,7 +97,7 @@ async function procesarEvento(evento) {
 // =======================
 async function insertarOrder(data) {
     const sql = `
-        INSERT INTO orders_v2_new (seller_id, resource, fecha)
+        INSERT INTO orders_v2(seller_id, resource, fecha)
         VALUES (?, ?, ?)
     `;
 
@@ -113,7 +113,7 @@ async function insertarOrder(data) {
 
 async function insertarShipment(data) {
     const sql = `
-        INSERT INTO shipments_new (seller_id, resource, fecha)
+        INSERT INTO shipments (seller_id, resource, fecha)
         VALUES (?, ?, ?)
     `;
 
@@ -129,7 +129,7 @@ async function insertarShipment(data) {
 
 async function insertarFlexHandshake(data) {
     const sql = `
-        INSERT INTO flex_handshakes_new (seller_id, resource)
+        INSERT INTO flex_handshakes (seller_id, resource)
         VALUES (?, ?)
     `;
 
