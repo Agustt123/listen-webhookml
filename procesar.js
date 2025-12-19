@@ -120,6 +120,7 @@ async function initRabbitMQ() {
     rabbitConnection.on("error", handleRabbitError);
     rabbitConnection.on("close", handleRabbitClose);
     rabbitChannel = await rabbitConnection.createChannel();
+    await rabbitChannel.assertQueue(migrationQueue, { durable: true });
     await rabbitChannel.assertQueue(queue, { durable: true });
     rabbitConnectionActive = true;
     retryCount = 0;
