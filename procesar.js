@@ -3,6 +3,7 @@ const mysql = require("mysql2");
 const redis = require("redis");
 const axios = require("axios");
 const { enviarAlertaPorCorreo } = require("./mail");
+const { logYellow } = require("./fuctions/logsCustom");
 let pLimit;
 let retryCount = 0;
 const maxRetries = 5;
@@ -10,6 +11,7 @@ const migrationQueue = "callbackMS";
 
 async function enviarEventoMigracion({ topic, tabla, data }) {
   try {
+    logYellow("🚀 Enviando evento de migración a RabbitMQ...");
     const mensaje = {
       event: "INSERT",
       source: "callback_ml",
