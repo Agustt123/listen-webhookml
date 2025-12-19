@@ -1,6 +1,6 @@
 const amqp = require("amqplib");
 const mysql = require("mysql2");
-const { executeQuery } = require("./executeQuery"); // ajustá path
+const { executeQuery } = require("./db.js"); // ajustá path
 const { logYellow, logRed } = require("./fuctions/logsCustom");
 
 // =======================
