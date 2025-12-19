@@ -14,7 +14,7 @@ async function enviarEventoMigracion({ topic, tabla, data }) {
     logYellow("🚀 Enviando evento de migración a RabbitMQ...");
     const mensaje = {
       event: "INSERT",
-      source: "callback_ml",
+      source: "callback_MC",
       topic,
       tabla_origen: tabla,
       timestamp: new Date().toISOString(),
