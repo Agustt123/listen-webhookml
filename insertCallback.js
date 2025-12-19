@@ -1,6 +1,6 @@
 const amqp = require("amqplib");
 const mysql = require("mysql2");
-const { executeQuery } = require("./executeQuery"); // ajustá el path real
+const { executeQuery } = require("./executeQuery"); // ajustá path
 const { logYellow, logRed } = require("./fuctions/logsCustom");
 
 // =======================
@@ -17,7 +17,7 @@ const con = mysql.createPool({
     port: 44353,
     user: "root",
     password: "4AVtLery67GFEd",
-    database: "callback_incomesML", // nueva BD
+    database: "callback_incomesML",
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
@@ -26,9 +26,9 @@ const con = mysql.createPool({
 // Test conexión DB
 con.getConnection((err, connection) => {
     if (err) {
-        logRed(`❌ Error conectando a nueva BD: ${err.message}`);
+        logRed(`❌ Error conectando a BD: ${err.message}`);
     } else {
-        logYellow("✅ Conectado a nueva BD");
+        logYellow("✅ Conectado a BD de migración");
         connection.release();
     }
 });
@@ -57,7 +57,7 @@ async function initRabbit() {
                 channel.ack(msg);
             } catch (err) {
                 logRed(`❌ Error procesando evento: ${err.message}`);
-                channel.nack(msg, false, false); // descartamos
+                channel.nack(msg, false, false); // se descarta
             }
         });
 
@@ -68,7 +68,7 @@ async function initRabbit() {
 }
 
 // =======================
-// PROCESADOR PRINCIPAL
+// PROCESADOR
 // =======================
 async function procesarEvento(evento) {
     const { topic, data } = evento;
@@ -92,7 +92,7 @@ async function procesarEvento(evento) {
 }
 
 // =======================
-// INSERTS (MISMAS TABLAS)
+// INSERTS (TABLAS REALES)
 // =======================
 async function insertarOrder(data) {
     const sql = `
