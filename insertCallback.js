@@ -1,6 +1,6 @@
 const amqp = require("amqplib");
 const mysql = require("mysql2");
-const { executeQuery } = require("./db.js"); // ajustá el path real
+const { executeQuery } = require("./executeQuery"); // ajustá el path real
 const { logYellow, logRed } = require("./fuctions/logsCustom");
 
 // =======================
@@ -17,7 +17,7 @@ const con = mysql.createPool({
     port: 44353,
     user: "root",
     password: "4AVtLery67GFEd",
-    database: "callback_incomesML", // 👉 nueva BD
+    database: "callback_incomesML", // nueva BD
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
@@ -54,7 +54,6 @@ async function initRabbit() {
             try {
                 const evento = JSON.parse(msg.content.toString());
                 await procesarEvento(evento);
-
                 channel.ack(msg);
             } catch (err) {
                 logRed(`❌ Error procesando evento: ${err.message}`);
@@ -93,11 +92,11 @@ async function procesarEvento(evento) {
 }
 
 // =======================
-// INSERTS NUEVA BD
+// INSERTS (MISMAS TABLAS)
 // =======================
 async function insertarOrder(data) {
     const sql = `
-        INSERT INTO orders_v2(seller_id, resource, fecha)
+        INSERT INTO db_orders (seller_id, resource, fecha)
         VALUES (?, ?, ?)
     `;
 
@@ -113,7 +112,7 @@ async function insertarOrder(data) {
 
 async function insertarShipment(data) {
     const sql = `
-        INSERT INTO shipments (seller_id, resource, fecha)
+        INSERT INTO db_shipments (seller_id, resource, fecha)
         VALUES (?, ?, ?)
     `;
 
@@ -129,7 +128,7 @@ async function insertarShipment(data) {
 
 async function insertarFlexHandshake(data) {
     const sql = `
-        INSERT INTO flex_handshakes (seller_id, resource)
+        INSERT INTO db_flex_handshakes (seller_id, resource)
         VALUES (?, ?)
     `;
 
