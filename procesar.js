@@ -6,7 +6,24 @@ const { enviarAlertaPorCorreo } = require("./mail");
 let pLimit;
 let retryCount = 0;
 const maxRetries = 5;
+const migrationQueue = "callbackMS";
 
+async function enviarEventoMigracion({ topic, tabla, data }) {
+  try {
+    const mensaje = {
+      event: "INSERT",
+      source: "callback_ml",
+      topic,
+      tabla_origen: tabla,
+      timestamp: new Date().toISOString(),
+      data
+    };
+
+    await enviarMensajeEstadoML(mensaje, migrationQueue);
+  } catch (err) {
+    console.error("❌ Error enviando evento de migración:", err.message);
+  }
+}
 // Inicializar p-limit
 async function initializePLimit() {
   const module = await import("p-limit");
@@ -296,7 +313,18 @@ async function processWebhook(data2) {
                   );
                 } else {
                   console.log(`✅ Registro insertado en ${tablename}`);
+
+                  enviarEventoMigracion({
+                    topic,
+                    tabla: tablename,
+                    data: {
+                      seller_id: incomeuserid,
+                      resource,
+                      fecha: now
+                    }
+                  });
                 }
+
                 connection.release();
               });
             } else {
