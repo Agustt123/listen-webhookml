@@ -112,14 +112,14 @@ async function insertarOrder(data) {
 
 async function insertarShipment(data) {
     const sql = `
-        INSERT INTO db_shipments (seller_id, resource, fecha)
-        VALUES (?, ?, ?)
+        INSERT INTO db_shipments (seller_id, resource)
+        VALUES (?, ?)
     `;
 
     await executeQuery(
         con,
         sql,
-        [data.seller_id, data.resource, data.fecha],
+        [data.seller_id, data.resource],
         true
     );
 
